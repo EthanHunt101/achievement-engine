@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Achievement Engine - DLC Checklist</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            padding: 30px;
+            background: #f8f9fa;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .stat-card h3 {
+            color: #667eea;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+        }
+
+        .stat-card .value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .stat-card .subvalue {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .controls {
+            padding: 20px 30px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .controls input[type="text"],
+        .controls select {
+            padding: 10px;
+            border: 2px solid #dee2e6;
+            border-radius: 6px;
+            font-size: 14px;
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .controls input[type="text"]:focus,
+        .controls select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .controls label {
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .game-section {
+            margin-bottom: 30px;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .game-header {
+            background: #667eea;
+            color: white;
+            padding: 15px 20px;
+            font-weight: 600;
+            font-size: 1.1em;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .game-header > span:first-child {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            flex: 1;
+        }
+
+        .game-header:hover {
+            background: #5568d3;
+        }
+
+        .game-header .toggle {
+            font-size: 0.8em;
+            opacity: 0.9;
+        }
+
+        .game-header .count {
+            background: rgba(255,255,255,0.2);
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.9em;
+        }
+
+        .dlc-list {
+            display: none;
+            padding: 0;
+        }
+
+        .game-section.expanded .dlc-list {
+            display: block;
+        }
+
+        .dlc-item {
+            padding: 15px 20px;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            transition: background 0.2s;
+        }
+
+        .dlc-item:last-child {
+            border-bottom: none;
+        }
+
+        .dlc-item:hover {
+            background: #f8f9fa;
+        }
+
+        .dlc-item.completed {
+            background: #d4edda;
+        }
+
+        .dlc-checkbox {
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            accent-color: #667eea;
+        }
+
+        .dlc-info {
+            flex: 1;
+        }
+
+        .dlc-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .dlc-stats {
+            font-size: 0.85em;
+            color: #666;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .dlc-stats span {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .progress-bar {
+            width: 150px;
+            height: 8px;
+            background: #e9ecef;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.3s ease;
+        }
+
+        .loading, .error {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+
+        .error {
+            color: #dc3545;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+
+        .filter-info {
+            padding: 15px 30px;
+            background: #fff3cd;
+            border-bottom: 1px solid #dee2e6;
+            color: #856404;
+            font-size: 0.9em;
+        }
+
+        .filter-info.hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div style="position: absolute; top: 20px; right: 30px;">
+                <a href="page.html" style="color: white; text-decoration: none; padding: 8px 16px; background: rgba(255,255,255,0.2); border-radius: 6px; transition: background 0.3s;">Main Dashboard</a>
+            </div>
+            <h1>🎮 Achievement Engine</h1>
+            <p>DLC Completion Checklist</p>
+        </header>
+
+        <div class="stats-grid" id="statsGrid">
+            <div class="stat-card">
+                <h3>Total DLCs</h3>
+                <div class="value" id="totalDlcs">-</div>
+            </div>
+            <div class="stat-card">
+                <h3>Completed</h3>
+                <div class="value" id="completedDlcs">-</div>
+                <div class="subvalue" id="completedPct">-</div>
+            </div>
+            <div class="stat-card">
+                <h3>DLC Achievements</h3>
+                <div class="value" id="totalAch">-</div>
+                <div class="subvalue" id="completedAch">-</div>
+            </div>
+            <div class="stat-card">
+                <h3>DLC Gamerscore</h3>
+                <div class="value" id="totalGs">-</div>
+                <div class="subvalue" id="completedGs">-</div>
+            </div>
+            <div class="stat-card">
+                <h3>DLC TA Score</h3>
+                <div class="value" id="totalTa">-</div>
+                <div class="subvalue" id="completedTa">-</div>
+            </div>
+            <div class="stat-card">
+                <h3>Overall TA Ratio</h3>
+                <div class="value" id="overallRatio">-</div>
+                <div class="subvalue" id="earnedRatio">-</div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <label for="searchInput">Search:</label>
+            <input type="text" id="searchInput" placeholder="Search games or DLCs...">
+            
+            <label for="filterSelect">Filter:</label>
+            <select id="filterSelect">
+                <option value="all">All DLCs</option>
+                <option value="completed">Completed Only</option>
+                <option value="incomplete">Incomplete Only</option>
+            </select>
+        </div>
+
+        <div class="filter-info hidden" id="filterInfo"></div>
+
+        <div class="content" id="content">
+            <div class="loading">Loading DLC data...</div>
+        </div>
+    </div>
+
+    <script>
+        let allData = null;
+        let filteredData = null;
+
+        // Load JSON data
+        async function loadData() {
+            try {
+                const response = await fetch('dlc_data.json');
+                if (!response.ok) {
+                    throw new Error('Failed to load data');
+                }
+                allData = await response.json();
+                filteredData = allData;
+                render();
+            } catch (error) {
+                document.getElementById('content').innerHTML = 
+                    '<div class="error">Error loading data. Make sure dlc_data.json exists.<br><br>Run: python rank_next.py --export-json dlc_data.json</div>';
+                console.error('Error:', error);
+            }
+        }
+
+        function updateStats() {
+            if (!allData) return;
+
+            const summary = allData.summary;
+            const overall = allData.overall_stats || {};
+            
+            document.getElementById('totalDlcs').textContent = summary.total_dlcs.toLocaleString();
+            document.getElementById('completedDlcs').textContent = summary.completed_dlcs.toLocaleString();
+            const completedPct = summary.total_dlcs > 0 
+                ? ((summary.completed_dlcs / summary.total_dlcs) * 100).toFixed(1) + '%'
+                : '0%';
+            document.getElementById('completedPct').textContent = completedPct;
+
+            document.getElementById('totalAch').textContent = summary.total_dlc_achievements.toLocaleString();
+            document.getElementById('completedAch').textContent = summary.completed_dlc_achievements.toLocaleString() + ' completed';
+
+            document.getElementById('totalGs').textContent = summary.total_dlc_gamerscore.toLocaleString();
+            document.getElementById('completedGs').textContent = summary.completed_dlc_gamerscore.toLocaleString() + ' GS completed';
+
+            document.getElementById('totalTa').textContent = (summary.total_dlc_tascore || 0).toLocaleString();
+            document.getElementById('completedTa').textContent = (summary.completed_dlc_tascore || 0).toLocaleString() + ' TA completed';
+
+            const overallRatio = overall.avg_overall_ratio;
+            const earnedRatio = overall.avg_earned_ratio;
+            document.getElementById('overallRatio').textContent = overallRatio ? overallRatio.toFixed(2) : 'N/A';
+            document.getElementById('earnedRatio').textContent = earnedRatio ? 'Earned: ' + earnedRatio.toFixed(2) : '';
+        }
+
+        function render() {
+            if (!filteredData) return;
+
+            updateStats();
+
+            const content = document.getElementById('content');
+            const games = filteredData.games || {};
+
+            if (Object.keys(games).length === 0) {
+                content.innerHTML = '<div class="no-data">No DLC data available</div>';
+                return;
+            }
+
+            let html = '';
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const filter = document.getElementById('filterSelect').value;
+
+            let visibleCount = 0;
+            let totalCount = 0;
+
+            for (const [gameName, dlcs] of Object.entries(games)) {
+                if (!Array.isArray(dlcs) || dlcs.length === 0) continue;
+
+                // Filter DLCs
+                let visibleDlcs = dlcs.filter(dlc => {
+                    totalCount++;
+                    const matchesSearch = !searchTerm || 
+                        gameName.toLowerCase().includes(searchTerm) ||
+                        dlc.dlc_name.toLowerCase().includes(searchTerm);
+                    
+                    if (!matchesSearch) return false;
+
+                    if (filter === 'completed') {
+                        return dlc.is_completed;
+                    } else if (filter === 'incomplete') {
+                        return !dlc.is_completed;
+                    }
+                    return true;
+                });
+
+                if (visibleDlcs.length === 0) continue;
+
+                visibleCount += visibleDlcs.length;
+
+                const completedCount = visibleDlcs.filter(d => d.is_completed).length;
+                const gameId = gameName.replace(/[^a-zA-Z0-9]/g, '_');
+                const gameStats = (allData.game_stats || {})[gameName] || {};
+                const gameTa = gameStats.total_ta || 0;
+                const gameEarnedTa = gameStats.earned_ta || 0;
+                const gameEarnedRatio = gameStats.avg_earned_ratio;
+                const gameOverallRatio = gameStats.avg_overall_ratio;
+
+                html += `
+                    <div class="game-section" data-game-id="${gameId}">
+                        <div class="game-header" onclick="toggleGame('${gameId}')">
+                            <span>
+                                <strong>${escapeHtml(gameName)}</strong>
+                                ${gameTa > 0 ? `<span style="font-size: 0.85em; margin-left: 10px; opacity: 0.9;">🏆 ${gameEarnedTa.toLocaleString()}/${gameTa.toLocaleString()} TA</span>` : ''}
+                                ${gameEarnedRatio ? `<span style="font-size: 0.85em; margin-left: 10px; opacity: 0.9;">📊 Earned Ratio: ${gameEarnedRatio.toFixed(2)}</span>` : ''}
+                                ${gameOverallRatio ? `<span style="font-size: 0.85em; margin-left: 10px; opacity: 0.7;">(Overall: ${gameOverallRatio.toFixed(2)})</span>` : ''}
+                            </span>
+                            <span>
+                                <span class="count">${completedCount}/${visibleDlcs.length} completed</span>
+                                <span class="toggle">▼</span>
+                            </span>
+                        </div>
+                        <div class="dlc-list" id="dlc-list-${gameId}">
+                `;
+
+                for (const dlc of visibleDlcs) {
+                    const progressPct = dlc.total_gs > 0 ? (dlc.earned_gs / dlc.total_gs * 100) : 0;
+                    const avgRatio = dlc.avg_overall_ratio;
+                    const ratioDisplay = avgRatio ? avgRatio.toFixed(2) : 'N/A';
+                    html += `
+                        <div class="dlc-item ${dlc.is_completed ? 'completed' : ''}">
+                            <input type="checkbox" class="dlc-checkbox" ${dlc.is_completed ? 'checked' : ''} disabled>
+                            <div class="dlc-info">
+                                <div class="dlc-name">${escapeHtml(dlc.dlc_name)}</div>
+                                <div class="dlc-stats">
+                                    <span>📊 ${dlc.earned_ach}/${dlc.total_ach} achievements</span>
+                                    <span>⭐ ${dlc.earned_gs}/${dlc.total_gs} GS</span>
+                                    <span>🏆 ${(dlc.earned_ta || 0).toLocaleString()}/${(dlc.total_ta || 0).toLocaleString()} TA</span>
+                                    <span>📈 ${dlc.completion_pct.toFixed(1)}%</span>
+                                    <span>📊 Ratio: ${ratioDisplay}</span>
+                                    ${dlc.remaining_ach > 0 ? `<span>⏳ ${dlc.remaining_ach} remaining</span>` : ''}
+                                </div>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: ${progressPct}%"></div>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                html += `
+                        </div>
+                    </div>
+                `;
+            }
+
+            content.innerHTML = html;
+
+            // Update filter info
+            const filterInfo = document.getElementById('filterInfo');
+            if (searchTerm || filter !== 'all') {
+                filterInfo.textContent = `Showing ${visibleCount} of ${totalCount} DLCs`;
+                filterInfo.classList.remove('hidden');
+            } else {
+                filterInfo.classList.add('hidden');
+            }
+        }
+
+        function toggleGame(gameId) {
+            const section = document.querySelector(`[data-game-id="${gameId}"]`);
+            if (section) {
+                section.classList.toggle('expanded');
+                const toggle = section.querySelector('.toggle');
+                if (toggle) {
+                    toggle.textContent = section.classList.contains('expanded') ? '▲' : '▼';
+                }
+            }
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Event listeners
+        document.getElementById('searchInput').addEventListener('input', () => {
+            render();
+        });
+
+        document.getElementById('filterSelect').addEventListener('change', () => {
+            render();
+        });
+
+        // Initialize
+        loadData();
+    </script>
+</body>
+</html>

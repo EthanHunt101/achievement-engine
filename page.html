@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Achievement Engine - Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            position: relative;
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .nav-links {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            display: flex;
+            gap: 15px;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            padding: 8px 16px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 6px;
+            transition: background 0.3s;
+        }
+
+        .nav-links a:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            padding: 30px;
+            background: #f8f9fa;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .stat-card h3 {
+            color: #667eea;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+        }
+
+        .stat-card .value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .stat-card .subvalue {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .section {
+            padding: 30px;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .section:last-child {
+            border-bottom: none;
+        }
+
+        .section h2 {
+            color: #667eea;
+            font-size: 1.8em;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .recommendations-list {
+            display: grid;
+            gap: 15px;
+        }
+
+        .recommendation-item {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .recommendation-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .recommendation-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .recommendation-title {
+            font-size: 1.2em;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .recommendation-score {
+            background: #667eea;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+
+        .recommendation-stats {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .recommendation-stats span {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .flags {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        .flag {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .flag.warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .flag.info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .blocked-list, .dlc-only-list {
+            display: grid;
+            gap: 10px;
+        }
+
+        .blocked-item, .dlc-only-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .blocked-item.fully-blocked {
+            border-left: 4px solid #dc3545;
+        }
+
+        .blocked-item.partially-blocked {
+            border-left: 4px solid #ffc107;
+        }
+
+        .completion-buckets {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }
+
+        .bucket-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .bucket-label {
+            font-weight: 600;
+            color: #667eea;
+            margin-bottom: 8px;
+        }
+
+        .bucket-count {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .bucket-percentage {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .progress-bar-container {
+            margin-top: 10px;
+            height: 8px;
+            background: #e9ecef;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.3s ease;
+        }
+
+        .loading, .error {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+
+        .error {
+            color: #dc3545;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="nav-links">
+                <a href="dlc.html">DLC Checklist</a>
+            </div>
+            <h1>🎮 Achievement Engine</h1>
+            <p>Main Dashboard</p>
+        </header>
+
+        <div class="stats-grid" id="statsGrid">
+            <div class="stat-card">
+                <h3>Games Started</h3>
+                <div class="value" id="totalGames">-</div>
+            </div>
+            <div class="stat-card">
+                <h3>Games Completed</h3>
+                <div class="value" id="completedGames">-</div>
+                <div class="subvalue" id="completionRate">-</div>
+            </div>
+            <div class="stat-card">
+                <h3>Gamerscore</h3>
+                <div class="value" id="gsEarned">-</div>
+                <div class="subvalue" id="gsCompletion">-</div>
+            </div>
+            <div class="stat-card">
+                <h3>TA Score</h3>
+                <div class="value" id="taEarned">-</div>
+                <div class="subvalue" id="taCompletion">-</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Completion Distribution</h2>
+            <div class="completion-buckets" id="completionBuckets"></div>
+        </div>
+
+        <div class="section">
+            <h2>Finish Next Recommendations</h2>
+            <div class="recommendations-list" id="recommendationsList">
+                <div class="loading">Loading recommendations...</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Games with Unachievable Achievements</h2>
+            <div id="blockedGames">
+                <div class="loading">Loading blocked games...</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Games with Only DLC Remaining</h2>
+            <div id="dlcOnlyGames">
+                <div class="loading">Loading DLC-only games...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let allData = null;
+
+        async function loadData() {
+            try {
+                const response = await fetch('main_stats.json');
+                if (!response.ok) {
+                    throw new Error('Failed to load data');
+                }
+                allData = await response.json();
+                render();
+            } catch (error) {
+                document.getElementById('statsGrid').innerHTML = 
+                    '<div class="error">Error loading data. Make sure main_stats.json exists.<br><br>Run: python rank_next.py --export-main-json main_stats.json</div>';
+                console.error('Error:', error);
+            }
+        }
+
+        function render() {
+            if (!allData) return;
+
+            updateStats();
+            renderCompletionBuckets();
+            renderRecommendations();
+            renderBlockedGames();
+            renderDlcOnlyGames();
+        }
+
+        function updateStats() {
+            const profile = allData.profile_summary;
+            
+            document.getElementById('totalGames').textContent = profile.total_games.toLocaleString();
+            document.getElementById('completedGames').textContent = profile.completed_games.toLocaleString();
+            const completionRate = profile.total_games > 0 
+                ? ((profile.completed_games / profile.total_games) * 100).toFixed(1) + '%'
+                : '0%';
+            document.getElementById('completionRate').textContent = completionRate + ' completion rate';
+
+            document.getElementById('gsEarned').textContent = profile.total_gs_earned.toLocaleString();
+            document.getElementById('gsCompletion').textContent = 
+                profile.total_gs_earned.toLocaleString() + ' / ' + profile.total_gs_possible.toLocaleString() + 
+                ' GS (' + profile.gs_completion_pct.toFixed(2) + '%)';
+            
+            // Note: These totals are based on what's in your CSV export files.
+            // If your actual totals are higher, your CSV export may be incomplete.
+
+            document.getElementById('taEarned').textContent = profile.total_ta_earned.toLocaleString();
+            document.getElementById('taCompletion').textContent = 
+                profile.total_ta_earned.toLocaleString() + ' / ' + profile.total_ta_possible.toLocaleString() + 
+                ' TA (' + profile.ta_completion_pct.toFixed(2) + '%)';
+        }
+
+        function renderCompletionBuckets() {
+            const buckets = allData.completion_buckets || [];
+            const container = document.getElementById('completionBuckets');
+            const totalGames = allData.profile_summary.started_games;
+
+            if (buckets.length === 0) {
+                container.innerHTML = '<div class="empty-state">No completion data available</div>';
+                return;
+            }
+
+            let html = '';
+            for (const bucket of buckets) {
+                const width = totalGames > 0 ? (bucket.count / totalGames * 100) : 0;
+                html += `
+                    <div class="bucket-card">
+                        <div class="bucket-label">${bucket.label}</div>
+                        <div class="bucket-count">${bucket.count}</div>
+                        <div class="bucket-percentage">${bucket.percentage.toFixed(1)}%</div>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar-fill" style="width: ${width}%"></div>
+                        </div>
+                    </div>
+                `;
+            }
+            container.innerHTML = html;
+        }
+
+        function renderRecommendations() {
+            const recommendations = allData.recommendations || [];
+            const container = document.getElementById('recommendationsList');
+
+            if (recommendations.length === 0) {
+                container.innerHTML = '<div class="empty-state">No recommendations available</div>';
+                return;
+            }
+
+            let html = '';
+            for (const rec of recommendations) {
+                const flags = [];
+                if (rec.unach_ach > 0) {
+                    flags.push(`<span class="flag warning">⚠ ${rec.unach_ach} unachievable</span>`);
+                }
+                if (rec.dlc_remaining > 0) {
+                    flags.push(`<span class="flag info">DLC: ${rec.dlc_remaining} remaining</span>`);
+                }
+
+                const ratioStr = rec.avg_locked_ratio ? rec.avg_locked_ratio.toFixed(2) : 'N/A';
+                html += `
+                    <div class="recommendation-item">
+                        <div class="recommendation-header">
+                            <div class="recommendation-title">${escapeHtml(rec.game)}</div>
+                            <div class="recommendation-score">Score: ${rec.score.toFixed(2)}</div>
+                        </div>
+                        <div class="recommendation-stats">
+                            <span>📊 ${rec.completion.toFixed(1)}% Complete</span>
+                            <span>⭐ ${rec.remaining_gs.toLocaleString()} GS remaining</span>
+                            <span>🎯 ${rec.remaining_ach} achievements remaining</span>
+                            <span>📈 Avg Ratio: ${ratioStr}</span>
+                        </div>
+                        ${flags.length > 0 ? `<div class="flags">${flags.join('')}</div>` : ''}
+                    </div>
+                `;
+            }
+            container.innerHTML = html;
+        }
+
+        function renderBlockedGames() {
+            const blocked = allData.blocked_games || {};
+            const games = blocked.games || [];
+            const container = document.getElementById('blockedGames');
+
+            if (games.length === 0) {
+                container.innerHTML = '<div class="empty-state">No blocked games</div>';
+                return;
+            }
+
+            let html = `
+                <div style="margin-bottom: 15px; padding: 15px; background: #fff3cd; border-radius: 6px;">
+                    <strong>Total unachievable achievements:</strong> ${blocked.total_unach_count.toLocaleString()}<br>
+                    <strong>Total GS lost:</strong> ${blocked.total_unach_gs.toLocaleString()}
+                </div>
+                <div class="blocked-list">
+            `;
+
+            for (const game of games) {
+                const className = game.fully_blocked ? 'fully-blocked' : 'partially-blocked';
+                const status = game.fully_blocked ? 'fully blocked' : `${game.unach_count} of ${game.total_locked} locked`;
+                html += `
+                    <div class="blocked-item ${className}">
+                        <div>
+                            <strong>${escapeHtml(game.game)}</strong>
+                            <div style="font-size: 0.9em; color: #666; margin-top: 5px;">
+                                ${game.unach_count} unachievable (${status}) - ${game.unach_gs.toLocaleString()} GS
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        function renderDlcOnlyGames() {
+            const games = allData.dlc_only_games || [];
+            const container = document.getElementById('dlcOnlyGames');
+
+            if (games.length === 0) {
+                container.innerHTML = '<div class="empty-state">No games with only DLC remaining</div>';
+                return;
+            }
+
+            let html = '<div class="dlc-only-list">';
+            for (const game of games) {
+                html += `
+                    <div class="dlc-only-item">
+                        <strong>${escapeHtml(game.game)}</strong>
+                        <span>${game.dlc_achievements_remaining} DLC achievements remaining</span>
+                    </div>
+                `;
+            }
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        loadData();
+    </script>
+</body>
+</html>

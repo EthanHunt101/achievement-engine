@@ -1,0 +1,25 @@
+{
+  "data": {
+    "include_dlc": true,
+    "count_unachievable_in_totals": false
+  },
+
+  "weights": {
+    "completion": 55,
+    "low_remaining_achievements": 25,
+    "low_remaining_gamerscore": 15,
+    "ratio_opportunity": 10,
+    "unachievable_penalty": 40,
+    "dlc_remaining_penalty": 10
+  },
+
+  "thresholds": {
+    "near_finish_percent": 0.80,
+    "gamerscore_chunk": 50
+  },
+
+  "output": {
+    "top_n": 20,
+    "show_flags": true
+  }
+}
