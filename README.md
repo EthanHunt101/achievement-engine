@@ -1,4 +1,4 @@
-# Achievement Engine — Finish Next
+# Achievement Engine
 
 A Python tool that analyzes TrueAchievements CSV exports and provides visual dashboards showing your achievement progress, recommendations for games to finish next, and detailed DLC completion tracking.
 
