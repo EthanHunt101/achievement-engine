@@ -1,0 +1,32 @@
+# Personal achievement data - DO NOT COMMIT
+# Users should add their own CSV files here
+data/unlocked.csv
+data/locked.csv
+
+# Generated JSON files with personal stats
+# These are auto-generated from your CSV files
+main_stats.json
+dlc_data.json
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db

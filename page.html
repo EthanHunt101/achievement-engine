@@ -4,285 +4,36 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Achievement Engine - Dashboard</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
-            color: #333;
-        }
-
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            overflow: hidden;
-        }
-
-        header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 30px;
-            text-align: center;
-            position: relative;
-        }
-
-        header h1 {
-            font-size: 2.5em;
-            margin-bottom: 10px;
-        }
-
-        .nav-links {
-            position: absolute;
-            top: 20px;
-            right: 30px;
-            display: flex;
-            gap: 15px;
-        }
-
-        .nav-links a {
-            color: white;
-            text-decoration: none;
-            padding: 8px 16px;
-            background: rgba(255,255,255,0.2);
-            border-radius: 6px;
-            transition: background 0.3s;
-        }
-
-        .nav-links a:hover {
-            background: rgba(255,255,255,0.3);
-        }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            padding: 30px;
-            background: #f8f9fa;
-        }
-
-        .stat-card {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            text-align: center;
-        }
-
-        .stat-card h3 {
-            color: #667eea;
-            font-size: 0.9em;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 10px;
-        }
-
-        .stat-card .value {
-            font-size: 2em;
-            font-weight: bold;
-            color: #333;
-        }
-
-        .stat-card .subvalue {
-            font-size: 0.9em;
-            color: #666;
-            margin-top: 5px;
-        }
-
-        .section {
-            padding: 30px;
-            border-bottom: 1px solid #dee2e6;
-        }
-
-        .section:last-child {
-            border-bottom: none;
-        }
-
-        .section h2 {
-            color: #667eea;
-            font-size: 1.8em;
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #667eea;
-        }
-
-        .recommendations-list {
-            display: grid;
-            gap: 15px;
-        }
-
-        .recommendation-item {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 8px;
-            border-left: 4px solid #667eea;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-
-        .recommendation-item:hover {
-            transform: translateX(5px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        }
-
-        .recommendation-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-
-        .recommendation-title {
-            font-size: 1.2em;
-            font-weight: 600;
-            color: #333;
-        }
-
-        .recommendation-score {
-            background: #667eea;
-            color: white;
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-weight: 600;
-        }
-
-        .recommendation-stats {
-            display: flex;
-            gap: 20px;
-            flex-wrap: wrap;
-            font-size: 0.9em;
-            color: #666;
-        }
-
-        .recommendation-stats span {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        .flags {
-            display: flex;
-            gap: 8px;
-            margin-top: 10px;
-            flex-wrap: wrap;
-        }
-
-        .flag {
-            padding: 4px 10px;
-            border-radius: 12px;
-            font-size: 0.85em;
-            font-weight: 600;
-        }
-
-        .flag.warning {
-            background: #fff3cd;
-            color: #856404;
-        }
-
-        .flag.info {
-            background: #d1ecf1;
-            color: #0c5460;
-        }
-
-        .blocked-list, .dlc-only-list {
-            display: grid;
-            gap: 10px;
-        }
-
-        .blocked-item, .dlc-only-item {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 6px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-
-        .blocked-item.fully-blocked {
-            border-left: 4px solid #dc3545;
-        }
-
-        .blocked-item.partially-blocked {
-            border-left: 4px solid #ffc107;
-        }
-
-        .completion-buckets {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 15px;
-        }
-
-        .bucket-card {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 8px;
-            text-align: center;
-        }
-
-        .bucket-label {
-            font-weight: 600;
-            color: #667eea;
-            margin-bottom: 8px;
-        }
-
-        .bucket-count {
-            font-size: 1.8em;
-            font-weight: bold;
-            color: #333;
-        }
-
-        .bucket-percentage {
-            font-size: 0.9em;
-            color: #666;
-            margin-top: 5px;
-        }
-
-        .progress-bar-container {
-            margin-top: 10px;
-            height: 8px;
-            background: #e9ecef;
-            border-radius: 4px;
-            overflow: hidden;
-        }
-
-        .progress-bar-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
-            transition: width 0.3s ease;
-        }
-
-        .loading, .error {
-            text-align: center;
-            padding: 60px 20px;
-            color: #666;
-        }
-
-        .error {
-            color: #dc3545;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 40px 20px;
-            color: #666;
-        }
-    </style>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="container">
         <header>
+            <div class="theme-picker" id="themePicker">
+                <button type="button" class="theme-picker-btn" id="themePickerBtn" aria-label="Choose color scheme" title="Choose color scheme"></button>
+                <div class="theme-picker-dropdown" id="themePickerDropdown">
+                    <button type="button" class="theme-option active" data-theme="default">
+                        <span class="theme-option-swatch" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"></span>
+                        Default
+                    </button>
+                    <button type="button" class="theme-option" data-theme="ocean">
+                        <span class="theme-option-swatch" style="background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%);"></span>
+                        Ocean
+                    </button>
+                    <button type="button" class="theme-option" data-theme="forest">
+                        <span class="theme-option-swatch" style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);"></span>
+                        Forest
+                    </button>
+                    <button type="button" class="theme-option" data-theme="coral">
+                        <span class="theme-option-swatch" style="background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);"></span>
+                        Coral
+                    </button>
+                    <button type="button" class="theme-option" data-theme="slate">
+                        <span class="theme-option-swatch" style="background: linear-gradient(135deg, #475569 0%, #1e293b 100%);"></span>
+                        Slate
+                    </button>
+                </div>
+            </div>
             <div class="nav-links">
                 <a href="dlc.html">DLC Checklist</a>
             </div>
@@ -310,31 +61,64 @@
                 <div class="value" id="taEarned">-</div>
                 <div class="subvalue" id="taCompletion">-</div>
             </div>
-        </div>
-
-        <div class="section">
-            <h2>Completion Distribution</h2>
-            <div class="completion-buckets" id="completionBuckets"></div>
-        </div>
-
-        <div class="section">
-            <h2>Finish Next Recommendations</h2>
-            <div class="recommendations-list" id="recommendationsList">
-                <div class="loading">Loading recommendations...</div>
+            <div class="stat-card">
+                <h3>Overall TA Ratio</h3>
+                <div class="value" id="taRatioEarned">-</div>
+                <div class="subvalue" id="taRatioPossible">-</div>
             </div>
         </div>
 
-        <div class="section">
-            <h2>Games with Unachievable Achievements</h2>
-            <div id="blockedGames">
-                <div class="loading">Loading blocked games...</div>
+        <div class="pane" id="pane-completion">
+            <button type="button" class="pane-header" aria-expanded="false" aria-controls="pane-completion-body">
+                <span class="pane-title">Completion Distribution</span>
+                <span class="pane-chevron" aria-hidden="true">▶</span>
+            </button>
+            <div class="pane-body" id="pane-completion-body">
+                <div class="pane-body-inner">
+                    <div class="completion-buckets" id="completionBuckets"></div>
+                </div>
             </div>
         </div>
 
-        <div class="section">
-            <h2>Games with Only DLC Remaining</h2>
-            <div id="dlcOnlyGames">
-                <div class="loading">Loading DLC-only games...</div>
+        <div class="pane" id="pane-recommendations">
+            <button type="button" class="pane-header" aria-expanded="false" aria-controls="pane-recommendations-body">
+                <span class="pane-title">Finish Next Recommendations</span>
+                <span class="pane-chevron" aria-hidden="true">▶</span>
+            </button>
+            <div class="pane-body" id="pane-recommendations-body">
+                <div class="pane-body-inner">
+                    <div class="recommendations-list" id="recommendationsList">
+                        <div class="loading">Loading recommendations...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="pane" id="pane-blocked">
+            <button type="button" class="pane-header" aria-expanded="false" aria-controls="pane-blocked-body">
+                <span class="pane-title">Games with Unachievable Achievements</span>
+                <span class="pane-chevron" aria-hidden="true">▶</span>
+            </button>
+            <div class="pane-body" id="pane-blocked-body">
+                <div class="pane-body-inner">
+                    <div id="blockedGames">
+                        <div class="loading">Loading blocked games...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="pane" id="pane-dlc-only">
+            <button type="button" class="pane-header" aria-expanded="false" aria-controls="pane-dlc-only-body">
+                <span class="pane-title">Games with Only DLC Remaining</span>
+                <span class="pane-chevron" aria-hidden="true">▶</span>
+            </button>
+            <div class="pane-body" id="pane-dlc-only-body">
+                <div class="pane-body-inner">
+                    <div id="dlcOnlyGames">
+                        <div class="loading">Loading DLC-only games...</div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -389,6 +173,11 @@
             document.getElementById('taCompletion').textContent = 
                 profile.total_ta_earned.toLocaleString() + ' / ' + profile.total_ta_possible.toLocaleString() + 
                 ' TA (' + profile.ta_completion_pct.toFixed(2) + '%)';
+
+            const taRatioEarned = profile.overall_ta_ratio_earned;
+            const taRatioPossible = profile.overall_ta_ratio_possible;
+            document.getElementById('taRatioEarned').textContent = taRatioEarned ? taRatioEarned.toFixed(2) : 'N/A';
+            document.getElementById('taRatioPossible').textContent = taRatioPossible ? 'Possible: ' + taRatioPossible.toFixed(2) : '';
         }
 
         function renderCompletionBuckets() {
@@ -442,7 +231,6 @@
                     <div class="recommendation-item">
                         <div class="recommendation-header">
                             <div class="recommendation-title">${escapeHtml(rec.game)}</div>
-                            <div class="recommendation-score">Score: ${rec.score.toFixed(2)}</div>
                         </div>
                         <div class="recommendation-stats">
                             <span>📊 ${rec.completion.toFixed(1)}% Complete</span>
@@ -520,6 +308,48 @@
             div.textContent = text;
             return div.innerHTML;
         }
+
+        document.querySelectorAll('.pane-header').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const pane = btn.closest('.pane');
+                const isOpen = pane.classList.toggle('open');
+                btn.setAttribute('aria-expanded', isOpen);
+            });
+        });
+
+        (function initTheme() {
+            const KEY = 'achievement-engine-theme';
+            const picker = document.getElementById('themePicker');
+            const btn = document.getElementById('themePickerBtn');
+            const dropdown = document.getElementById('themePickerDropdown');
+
+            function applyTheme(theme) {
+                document.body.classList.remove('theme-ocean', 'theme-forest', 'theme-coral', 'theme-slate');
+                if (theme && theme !== 'default') document.body.classList.add('theme-' + theme);
+                try { localStorage.setItem(KEY, theme || 'default'); } catch (e) {}
+                dropdown.querySelectorAll('.theme-option').forEach(opt => {
+                    opt.classList.toggle('active', opt.dataset.theme === (theme || 'default'));
+                });
+            }
+
+            const saved = (function() { try { return localStorage.getItem(KEY); } catch (e) { return null; } })();
+            if (saved) applyTheme(saved);
+
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                picker.classList.toggle('open');
+            });
+
+            dropdown.querySelectorAll('.theme-option').forEach(opt => {
+                opt.addEventListener('click', () => {
+                    applyTheme(opt.dataset.theme);
+                    picker.classList.remove('open');
+                });
+            });
+
+            dropdown.addEventListener('click', e => e.stopPropagation());
+            document.addEventListener('click', () => picker.classList.remove('open'));
+        })();
 
         loadData();
     </script>

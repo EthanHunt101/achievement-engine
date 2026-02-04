@@ -2,26 +2,15 @@ import csv
 from collections import defaultdict
 from pathlib import Path
 import json
-import argparse
-import sys
 
 
 UNLOCKED_PATH = Path("data/unlocked.csv")
 LOCKED_PATH   = Path("data/locked.csv")
 
-CONFIG_PATH = Path("config.json")
 
 # ====== SETTINGS YOU CAN TWEAK ======
 INCLUDE_DLC = True                 # If False, ignore DLC achievements entirely
 COUNT_UNACHIEVABLE_IN_TOTAL = True # If False, unachievable locked achs won't count against completion %
-TOP_N = 5
-
-# Weights
-W_COMPLETION = 55
-W_LOW_REMAINING_ACH = 25
-W_LOW_REMAINING_GS = 15
-W_RATIO_OPPORTUNITY = 10
-W_UNACHIEVABLE_PENALTY = 40        # big penalty if a game has unachievable achievements
 # ===================================
 
 def safe_int(x, default=0):
@@ -143,7 +132,8 @@ def read_locked(games):
         if not unach:
             g.setdefault("locked_achievements_achievable", []).append({"ratio": ratio, "gamerscore": gs, "ta": ta, "dlc": dlc_name, "title": title, "row": r})
 
-def compute_score(game, g):
+def get_game_info(game, g):
+    """Extract game information for ranking. Games are ranked by number of remaining achievements (ascending)."""
     # Totals: earned + locked, optionally excluding unachievable
     # Compute remaining achievements/GS according to COUNT_UNACHIEVABLE_IN_TOTAL
     locked_ach_effective = g["locked_ach_total"]
@@ -170,29 +160,12 @@ def compute_score(game, g):
     if remaining_ach == 0:
         return None
 
-
-    # Simplified ranking: use only completion percentage.
-    # The previous logic considered many components (remaining ach, GS, ratio,
-    # unachievable penalty, DLC penalty). Those are intentionally commented out
-    # to make recommendations purely based on completion %.
-    # score is expressed on a 0..100 scale (completion*100)
-    score = completion * 100.0
-
     # Compute average locked TARatio for achievable locked achievements (for display only)
     ratios = g.get("locked_ratios_achievable", [])
     avg_ratio = (sum(ratios) / len(ratios)) if ratios else None
 
-    breakdown = {
-        "completion": score
-    }
-
-    explanation = f"completion:{score:.2f}"
-
     return {
         "game": game,
-        "score": score,
-        "breakdown": breakdown,
-        "explanation": explanation,
         "completion": completion,
         "remaining_ach": remaining_ach,
         "remaining_gs": remaining_gs,
@@ -206,59 +179,8 @@ def compute_score(game, g):
     }
 
 
-def load_config():
-    """Load `config.json` if present and return as dict.
-
-    Does not modify globals; main() will apply settings.
-    """
-    if not CONFIG_PATH.exists():
-        return {}
-    try:
-        with CONFIG_PATH.open("r", encoding="utf-8") as f:
-            return json.load(f) or {}
-    except Exception:
-        return {}
 
 
-def apply_mode(mode: str):
-    """Apply a preset mode by updating global weight constants.
-
-    Supported modes: 'fast', 'ratio', 'safe'
-    """
-    global W_COMPLETION, W_LOW_REMAINING_ACH, W_LOW_REMAINING_GS, W_RATIO_OPPORTUNITY
-    global W_UNACHIEVABLE_PENALTY
-
-    presets = {
-        "fast": {
-            "W_COMPLETION": 45,
-            "W_LOW_REMAINING_ACH": 35,
-            "W_LOW_REMAINING_GS": 20,
-            "W_RATIO_OPPORTUNITY": 5,
-            "W_UNACHIEVABLE_PENALTY": 40,
-        },
-        "ratio": {
-            "W_COMPLETION": 40,
-            "W_LOW_REMAINING_ACH": 15,
-            "W_LOW_REMAINING_GS": 10,
-            "W_RATIO_OPPORTUNITY": 35,
-            "W_UNACHIEVABLE_PENALTY": 40,
-        },
-        "safe": {
-            "W_COMPLETION": 55,
-            "W_LOW_REMAINING_ACH": 20,
-            "W_LOW_REMAINING_GS": 10,
-            "W_RATIO_OPPORTUNITY": 5,
-            "W_UNACHIEVABLE_PENALTY": 80,
-        }
-    }
-    p = presets.get(mode)
-    if not p:
-        return
-    W_COMPLETION = p["W_COMPLETION"]
-    W_LOW_REMAINING_ACH = p["W_LOW_REMAINING_ACH"]
-    W_LOW_REMAINING_GS = p["W_LOW_REMAINING_GS"]
-    W_RATIO_OPPORTUNITY = p["W_RATIO_OPPORTUNITY"]
-    W_UNACHIEVABLE_PENALTY = p["W_UNACHIEVABLE_PENALTY"]
 
 def export_main_stats(games, ranked, total_games, completed_games, total_gs_earned, total_gs_possible, 
                       total_ta_earned, total_ta_possible, overall_completion_pct, buckets, started_games,
@@ -270,7 +192,6 @@ def export_main_stats(games, ranked, total_games, completed_games, total_gs_earn
     for r in ranked:
         recommendations.append({
             "game": r["game"],
-            "score": r["score"],
             "completion": r["completion"] * 100,
             "remaining_ach": r["remaining_ach"],
             "remaining_gs": r["remaining_gs"],
@@ -351,6 +272,10 @@ def export_main_stats(games, ranked, total_games, completed_games, total_gs_earn
                 "locked_unach_gs": g["locked_gs_unach"]
             })
     
+    # Calculate overall TA ratios
+    overall_ta_ratio_earned = (total_ta_earned / total_gs_earned) if total_gs_earned > 0 else None
+    overall_ta_ratio_possible = (total_ta_possible / total_gs_possible) if total_gs_possible > 0 else None
+    
     export_data = {
         "profile_summary": {
             "total_games": total_games,
@@ -361,6 +286,8 @@ def export_main_stats(games, ranked, total_games, completed_games, total_gs_earn
             "total_ta_earned": total_ta_earned,
             "total_ta_possible": total_ta_possible,
             "ta_completion_pct": (total_ta_earned / total_ta_possible * 100) if total_ta_possible > 0 else 0.0,
+            "overall_ta_ratio_earned": overall_ta_ratio_earned,
+            "overall_ta_ratio_possible": overall_ta_ratio_possible,
             "started_games": started_games
         },
         "completion_buckets": completion_buckets,
@@ -591,342 +518,159 @@ def export_dlc_data(games, output_path: Path):
     return export_data
 
 def main():
-    # CLI: allow runtime overrides and presets
-    parser = argparse.ArgumentParser(description="Finish-next recommendation engine")
-    parser.add_argument("--mode", choices=("fast", "ratio", "safe"), help="Preset mode to tune weights")
-    parser.add_argument("--top", "-n", type=int, help="Number of top recommendations to show")
-    parser.add_argument("--include-dlc", dest="include_dlc", action="store_true", help="Include DLC achievements")
-    parser.add_argument("--exclude-dlc", dest="include_dlc", action="store_false", help="Exclude DLC achievements")
-    parser.set_defaults(include_dlc=None)
-    parser.add_argument("--count-unachievable", dest="count_unachievable", action="store_true", help="Count unachievable achievements in totals")
-    parser.add_argument("--no-count-unachievable", dest="count_unachievable", action="store_false", help="Do not count unachievable achievements in totals")
-    parser.set_defaults(count_unachievable=None)
-    parser.add_argument("--report-file", dest="report_file", help="Path to write report (overwritten each run).")
-    parser.add_argument("--export-json", dest="export_json", help="Path to export DLC and stats data as JSON for HTML visualization")
-    parser.add_argument("--export-main-json", dest="export_main_json", help="Path to export main dashboard stats as JSON for HTML visualization")
-
-    args = parser.parse_args()
-
-    # Load config.json and apply settings (if present)
-    cfg = load_config()
-
-    # apply config mode unless CLI overrides
-    cfg_mode = cfg.get("mode")
-    mode_to_apply = args.mode or cfg_mode
-    if mode_to_apply:
-        apply_mode(mode_to_apply)
-
-    # allow config to override individual weight values
-    global TOP_N, INCLUDE_DLC, COUNT_UNACHIEVABLE_IN_TOTAL
-    global W_COMPLETION, W_LOW_REMAINING_ACH, W_LOW_REMAINING_GS, W_RATIO_OPPORTUNITY
-    global W_UNACHIEVABLE_PENALTY
-
-    # Apply numeric config overrides if provided in config.json
-    for k in ("W_COMPLETION", "W_LOW_REMAINING_ACH", "W_LOW_REMAINING_GS", "W_RATIO_OPPORTUNITY", "W_UNACHIEVABLE_PENALTY"):
-        if k in cfg:
-            try:
-                val = float(cfg[k])
-                locals_ref = globals()
-                locals_ref[k] = val
-            except Exception:
-                pass
-
-    if "TOP_N" in cfg:
-        try:
-            TOP_N = int(cfg["TOP_N"])
-        except Exception:
-            pass
-
-    if "INCLUDE_DLC" in cfg:
-        INCLUDE_DLC = bool(cfg["INCLUDE_DLC"])
-    if "COUNT_UNACHIEVABLE_IN_TOTAL" in cfg:
-        COUNT_UNACHIEVABLE_IN_TOTAL = bool(cfg["COUNT_UNACHIEVABLE_IN_TOTAL"])
-
-    # CLI args have final say
-    if args.top:
-        TOP_N = args.top
-    if args.include_dlc is not None:
-        INCLUDE_DLC = args.include_dlc
-    if args.count_unachievable is not None:
-        COUNT_UNACHIEVABLE_IN_TOTAL = args.count_unachievable
-
-    # Prepare report file (tee stdout -> file + console)
-    report_path = Path(args.report_file) if getattr(args, "report_file", None) else Path(cfg.get("report_file", "last_report.txt"))
-
-    # Open report and replace sys.stdout with a tee that writes to both
-    class Tee:
-        def __init__(self, *files):
-            self._files = files
-        def write(self, data):
-            for f in self._files:
-                try:
-                    f.write(data)
-                except UnicodeEncodeError:
-                    # Handle encoding errors for console output
-                    if f == old_stdout:
-                        # Replace problematic characters for console
-                        safe_data = data.encode('utf-8', errors='replace').decode('utf-8', errors='replace')
-                        try:
-                            f.write(safe_data)
-                        except:
-                            pass  # Skip if still can't write
-                    else:
-                        f.write(data)  # File handles should handle UTF-8
-        def flush(self):
-            for f in self._files:
-                try:
-                    f.flush()
-                except Exception:
-                    pass
+    # Use default settings (no CLI arguments)
+    global INCLUDE_DLC, COUNT_UNACHIEVABLE_IN_TOTAL
 
     if not UNLOCKED_PATH.exists():
         raise FileNotFoundError(f"Missing {UNLOCKED_PATH} (your unlocked export).")
     if not LOCKED_PATH.exists():
         raise FileNotFoundError(f"Missing {LOCKED_PATH} (your locked export).")
 
-    report_file_handle = report_path.open("w", encoding="utf-8", errors="replace")
-    old_stdout = sys.stdout
-    sys.stdout = Tee(old_stdout, report_file_handle)
+    games = defaultdict(lambda: {
+        "earned_ach": 0, "earned_gs": 0, "earned_ta": 0,
+        "earned_dlc_ach": 0,
+        "locked_ach_total": 0, "locked_gs_total": 0, "locked_ta_total": 0,
+        "locked_dlc_ach": 0,
+        "locked_ach_unach": 0, "locked_gs_unach": 0, "locked_ta_unach": 0,
+        "locked_dlc_unach": 0,
+        "earned_ratios": [],
+        "locked_ratios_achievable": []
+    })
 
-    # ensure stdout is restored and file closed at end
+    read_unlocked(games)
+    read_locked(games)
+
+    # ===== PROFILE-LEVEL STATS =====
+    # Sum ALL earned GS/TA directly from unlocked.csv to get true totals
+    # IMPORTANT: Count ALL achievements regardless of DLC settings for total earned
+    # (DLC filtering only affects recommendations, not your total earned stats)
+    total_gs_earned = 0
+    total_ta_earned = 0
     try:
-
-        games = defaultdict(lambda: {
-            "earned_ach": 0, "earned_gs": 0, "earned_ta": 0,
-            "earned_dlc_ach": 0,
-            "locked_ach_total": 0, "locked_gs_total": 0, "locked_ta_total": 0,
-            "locked_dlc_ach": 0,
-            "locked_ach_unach": 0, "locked_gs_unach": 0, "locked_ta_unach": 0,
-            "locked_dlc_unach": 0,
-            "earned_ratios": [],
-            "locked_ratios_achievable": []
-        })
-
-        read_unlocked(games)
-        read_locked(games)
-
-        # ===== PROFILE-LEVEL STATS =====
-        # Sum ALL earned GS/TA directly from unlocked.csv to get true totals
-        # IMPORTANT: Count ALL achievements regardless of DLC settings for total earned
-        # (DLC filtering only affects recommendations, not your total earned stats)
-        total_gs_earned = 0
-        total_ta_earned = 0
-        total_rows_processed = 0
-        total_rows_skipped_no_date = 0
-        try:
-            required = {"GameName","Gamerscore","TAScore","TARatio","DLCName","UnlockDate"}
-            unlocked_rows = load_csv(UNLOCKED_PATH, required)
-            for r in unlocked_rows:
-                unlock_date = str(r.get("UnlockDate","")).strip()
-                if not unlock_date:
-                    total_rows_skipped_no_date += 1
-                    continue
-                # Count ALL achievements for total earned (don't filter DLC here)
-                total_gs_earned += safe_int(r.get("Gamerscore", 0))
-                total_ta_earned += safe_int(r.get("TAScore", 0))
-                total_rows_processed += 1
-        except Exception as e:
-            # Fallback to games dictionary if CSV read fails
-            total_gs_earned = sum(g.get("earned_gs", 0) for g in games.values())
-            total_ta_earned = sum(g.get("earned_ta", 0) for g in games.values())
-        
-        # Debug output (only if export_main_json is requested)
-        if getattr(args, "export_main_json", None):
-            print(f"\n[DEBUG] Total rows processed: {total_rows_processed}")
-            print(f"[DEBUG] Rows skipped (no date): {total_rows_skipped_no_date}")
-            print(f"[DEBUG] Total GS earned (from CSV): {total_gs_earned:,}")
-            print(f"[DEBUG] Total TA earned (from CSV): {total_ta_earned:,}")
-        
-        total_games = 0
-        completed_games = 0
-        total_gs_possible = 0
-        total_ta_possible = 0
-
-        for game, g in games.items():
-            # Effective locked GS (respecting unachievable setting)
-            locked_gs_effective = g["locked_gs_total"]
-            locked_ach_effective = g["locked_ach_total"]
-            locked_ta_effective = g["locked_ta_total"]
-
-            if not COUNT_UNACHIEVABLE_IN_TOTAL:
-                locked_gs_effective -= g["locked_gs_unach"]
-                locked_ta_effective -= g["locked_ta_unach"]
-                locked_ach_effective -= g["locked_ach_unach"]
-
-            # For possible totals, use earned + locked (or just earned if no locked)
-            total_gs = g["earned_gs"] + max(0, locked_gs_effective)
-            total_ta = g["earned_ta"] + max(0, locked_ta_effective)
-            remaining_ach = max(0, locked_ach_effective)
-
-            # Count all games with any earned achievements
-            if g.get("earned_gs", 0) > 0 or g.get("earned_ach", 0) > 0:
-                total_games += 1
-                if remaining_ach == 0:
-                    completed_games += 1
-                
-                # Add to possible totals (use earned_gs as minimum if total_gs is somehow 0)
-                total_gs_possible += max(total_gs, g.get("earned_gs", 0))
-                total_ta_possible += max(total_ta, g.get("earned_ta", 0))
-
-        overall_completion_pct = (
-            (total_gs_earned / total_gs_possible) * 100
-            if total_gs_possible > 0 else 0.0
-        )
-
-        # Completion buckets for profile overview (only consider started games)
-        # Buckets: 0-24,25-49,50-74,75-89,90-98,99,100
-        bucket_bounds = [0,25,50,75,90,99,100]
-        bucket_labels = ["0-24%","25-49%","50-74%","75-89%","90-98%","99%","100%"]
-        buckets = {label: 0 for label in bucket_labels}
-        started_games = 0
-
-        for game, g in games.items():
-            locked_gs_effective = g["locked_gs_total"]
-            locked_ach_effective = g["locked_ach_total"]
-            if not COUNT_UNACHIEVABLE_IN_TOTAL:
-                locked_gs_effective -= g["locked_gs_unach"]
-                locked_ach_effective -= g["locked_ach_unach"]
-
-            total_gs = g["earned_gs"] + max(0, locked_gs_effective)
-            if total_gs <= 0:
+        required = {"GameName","Gamerscore","TAScore","TARatio","DLCName","UnlockDate"}
+        unlocked_rows = load_csv(UNLOCKED_PATH, required)
+        for r in unlocked_rows:
+            unlock_date = str(r.get("UnlockDate","")).strip()
+            if not unlock_date:
                 continue
-            started_games += 1
-            pct = (g["earned_gs"] / total_gs) * 100
-            # place into bucket
-            if pct >= 100:
-                buckets["100%"] += 1
-            elif pct >= 99:
-                buckets["99%"] += 1
-            elif pct >= 90:
-                buckets["90-98%"] += 1
-            elif pct >= 75:
-                buckets["75-89%"] += 1
-            elif pct >= 50:
-                buckets["50-74%"] += 1
-            elif pct >= 25:
-                buckets["25-49%"] += 1
-            else:
-                buckets["0-24%"] += 1
+            # Count ALL achievements for total earned (don't filter DLC here)
+            total_gs_earned += safe_int(r.get("Gamerscore", 0))
+            total_ta_earned += safe_int(r.get("TAScore", 0))
+    except Exception as e:
+        # Fallback to games dictionary if CSV read fails
+        total_gs_earned = sum(g.get("earned_gs", 0) for g in games.values())
+        total_ta_earned = sum(g.get("earned_ta", 0) for g in games.values())
+    
+    total_games = 0
+    completed_games = 0
+    total_gs_possible = 0
+    total_ta_possible = 0
 
-        ranked = []
-        for game, g in games.items():
-            result = compute_score(game, g)
-            if result:
-                ranked.append(result)
+    for game, g in games.items():
+        # Effective locked GS (respecting unachievable setting)
+        locked_gs_effective = g["locked_gs_total"]
+        locked_ach_effective = g["locked_ach_total"]
+        locked_ta_effective = g["locked_ta_total"]
 
-        ranked.sort(key=lambda x: x["score"], reverse=True)
+        if not COUNT_UNACHIEVABLE_IN_TOTAL:
+            locked_gs_effective -= g["locked_gs_unach"]
+            locked_ta_effective -= g["locked_ta_unach"]
+            locked_ach_effective -= g["locked_ach_unach"]
 
-        print("\n=== PROFILE SUMMARY (COUNTING NON-STARTED DLC) ===")
-        print(f"Games started: {total_games}")
-        print(f"Games completed: {completed_games}")
-        print(
-            f"Overall completion (Gamerscore): "
-            f"{total_gs_earned:,} / {total_gs_possible:,} GS "
-            f"({overall_completion_pct:.2f}%)"
-        )
+        # For possible totals, use earned + locked (or just earned if no locked)
+        total_gs = g["earned_gs"] + max(0, locked_gs_effective)
+        total_ta = g["earned_ta"] + max(0, locked_ta_effective)
+        remaining_ach = max(0, locked_ach_effective)
 
-        print(
-            f"Overall completion (TrueAchievements Score): "
-            f"{total_ta_earned:,} / {total_ta_possible:,} GS "
-            f"({((total_ta_earned / total_ta_possible) * 100):.2f}%)"
-        )
-
-        print("\n=== Finish Next Recommendations ===\n")
-        print(f"DLC included: {INCLUDE_DLC}")
-        print(f"Count unachievable in totals: {COUNT_UNACHIEVABLE_IN_TOTAL}\n")
-
-        for i, r in enumerate(ranked[:TOP_N], start=1):
-            ratio_str = f"{r['avg_locked_ratio']:.2f}" if r["avg_locked_ratio"] is not None else "n/a"
-            flags = []
-            if r["unach_ach"] > 0:
-                flags.append(f"⚠ unachievable={r['unach_ach']}")
-            if r["dlc_remaining"] > 0:
-                flags.append(f"DLC remaining={r['dlc_remaining']}")
-            flag_str = (" | " + ", ".join(flags)) if flags else ""
-
-            print(
-                f"{i:>2}. {r['game']}{flag_str}\n"
-                f"    Score: {r['score']:.2f} | Completion: {r['completion']*100:.1f}%\n"
-                f"    Remaining: {r['remaining_ach']} achievements, {r['remaining_gs']} GS\n"
-                f"    Locked achievable avg TA ratio: {ratio_str}\n"
-            )
-            '''
-            # concise explanation of score components
-            if "explanation" in r:
-                print(f"    Why: {r['explanation']}")
-            '''
+        # Count all games with any earned achievements
+        if g.get("earned_gs", 0) > 0 or g.get("earned_ach", 0) > 0:
+            total_games += 1
+            if remaining_ach == 0:
+                completed_games += 1
             
-        # Games with any unachievable achievements (informational)
-        # Mark games that are fully blocked (all remaining locked achs unachievable)
-        blocked = []
-        for game, g in games.items():
-            if g["locked_ach_unach"] > 0:
-                blocked.append((game, g["locked_ach_unach"], g["locked_gs_unach"], g["locked_ach_total"]))
+            # Add to possible totals (use earned_gs as minimum if total_gs is somehow 0)
+            total_gs_possible += max(total_gs, g.get("earned_gs", 0))
+            total_ta_possible += max(total_ta, g.get("earned_ta", 0))
 
-        if blocked:
-            # compute totals (moved to blocked section as requested)
-            total_unach_count = sum(x[1] for x in blocked)
-            total_unach_gs = sum(x[2] for x in blocked)
-            print("\n=== Games with unachievable achievements (blocked) ===\n")
-            print(f"Total unachievable achievements: {total_unach_count}")
-            print(f"Total GS lost to unachievable: {total_unach_gs}\n")
-            # Show all blocked games (sorted by unachievable count desc)
-            for game, count, gs_unach, total_locked in sorted(blocked, key=lambda x: x[1], reverse=True):
-                if total_locked > 0 and count == total_locked:
-                    print(f"- {game}: {count} unachievable remaining (fully blocked) - {gs_unach} GS")
-                else:
-                    print(f"- {game}: {count} unachievable remaining (of {total_locked} locked) - {gs_unach} GS")
+    overall_completion_pct = (
+        (total_gs_earned / total_gs_possible) * 100
+        if total_gs_possible > 0 else 0.0
+    )
 
-        # Secondary reports
-        # 1) Games with only DLC remaining (after considering unachievable setting)
-        dlc_only = []
-        for game, g in games.items():
-            if g["locked_ach_total"] <= 0:
-                continue
-            locked_ach_effective = g["locked_ach_total"]
-            if not COUNT_UNACHIEVABLE_IN_TOTAL:
-                locked_ach_effective -= g["locked_ach_unach"]
+    # Completion buckets for profile overview (only consider started games)
+    # Buckets: 0-24,25-49,50-74,75-89,90-98,99,100
+    bucket_bounds = [0,25,50,75,90,99,100]
+    bucket_labels = ["0-24%","25-49%","50-74%","75-89%","90-98%","99%","100%"]
+    buckets = {label: 0 for label in bucket_labels}
+    started_games = 0
 
-            dlc_remaining_effective = g["locked_dlc_ach"] - (g["locked_dlc_unach"] if not COUNT_UNACHIEVABLE_IN_TOTAL else 0)
-            if locked_ach_effective > 0 and locked_ach_effective == dlc_remaining_effective:
-                dlc_only.append((game, locked_ach_effective))
+    for game, g in games.items():
+        locked_gs_effective = g["locked_gs_total"]
+        locked_ach_effective = g["locked_ach_total"]
+        if not COUNT_UNACHIEVABLE_IN_TOTAL:
+            locked_gs_effective -= g["locked_gs_unach"]
+            locked_ach_effective -= g["locked_ach_unach"]
 
-        if dlc_only:
-            print("\n=== Games with only DLC remaining ===\n")
-            for game, cnt in sorted(dlc_only, key=lambda x: x[1], reverse=True)[:50]:
-                print(f"- {game}: {cnt} DLC achievements remaining")
+        total_gs = g["earned_gs"] + max(0, locked_gs_effective)
+        if total_gs <= 0:
+            continue
+        started_games += 1
+        pct = (g["earned_gs"] / total_gs) * 100
+        # place into bucket
+        if pct >= 100:
+            buckets["100%"] += 1
+        elif pct >= 99:
+            buckets["99%"] += 1
+        elif pct >= 90:
+            buckets["90-98%"] += 1
+        elif pct >= 75:
+            buckets["75-89%"] += 1
+        elif pct >= 50:
+            buckets["50-74%"] += 1
+        elif pct >= 25:
+            buckets["25-49%"] += 1
+        else:
+            buckets["0-24%"] += 1
 
-        # (Previously there was a duplicate "Unachievable achievements summary" here;
-        # totals are now shown at the top of the blocked section. Removed duplicate.)
+    ranked = []
+    for game, g in games.items():
+        result = get_game_info(game, g)
+        if result:
+            ranked.append(result)
 
-        # Always export JSON files for HTML pages (unless explicitly disabled)
-        export_main_path = getattr(args, "export_main_json", None)
-        if export_main_path is None:
-            export_main_path = Path("main_stats.json")
+    # Sort by remaining achievements (ascending) - fewer achievements = higher priority
+    ranked.sort(key=lambda x: x["remaining_ach"])
         
-        export_dlc_path = getattr(args, "export_json", None)
-        if export_dlc_path is None:
-            export_dlc_path = Path("dlc_data.json")
-        
-        # Export main stats to JSON
-        export_main_stats(games, ranked, total_games, completed_games, total_gs_earned, total_gs_possible,
-                        total_ta_earned, total_ta_possible, overall_completion_pct, buckets, started_games,
-                        blocked, dlc_only, Path(export_main_path))
-        print(f"\nMain stats exported to {export_main_path}")
-        
-        # Export DLC data to JSON
-        export_dlc_data(games, Path(export_dlc_path))
-        print(f"DLC data exported to {export_dlc_path}")
-    finally:
-        # restore stdout and close report file
-        try:
-            sys.stdout = old_stdout
-        except Exception:
-            pass
-        try:
-            report_file_handle.close()
-        except Exception:
-            pass
+    # Games with any unachievable achievements (for export)
+    blocked = []
+    for game, g in games.items():
+        if g["locked_ach_unach"] > 0:
+            blocked.append((game, g["locked_ach_unach"], g["locked_gs_unach"], g["locked_ach_total"]))
+
+    # Games with only DLC remaining (for export)
+    dlc_only = []
+    for game, g in games.items():
+        if g["locked_ach_total"] <= 0:
+            continue
+        locked_ach_effective = g["locked_ach_total"]
+        if not COUNT_UNACHIEVABLE_IN_TOTAL:
+            locked_ach_effective -= g["locked_ach_unach"]
+
+        dlc_remaining_effective = g["locked_dlc_ach"] - (g["locked_dlc_unach"] if not COUNT_UNACHIEVABLE_IN_TOTAL else 0)
+        if locked_ach_effective > 0 and locked_ach_effective == dlc_remaining_effective:
+            dlc_only.append((game, locked_ach_effective))
+
+    # Export JSON files for HTML pages
+    export_main_path = Path("main_stats.json")
+    export_dlc_path = Path("dlc_data.json")
+    
+    # Export main stats to JSON
+    export_main_stats(games, ranked, total_games, completed_games, total_gs_earned, total_gs_possible,
+                    total_ta_earned, total_ta_possible, overall_completion_pct, buckets, started_games,
+                    blocked, dlc_only, Path(export_main_path))
+    
+    # Export DLC data to JSON
+    export_dlc_data(games, Path(export_dlc_path))
 
 
 if __name__ == "__main__":

@@ -4,267 +4,38 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Achievement Engine - DLC Checklist</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
-            color: #333;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            overflow: hidden;
-        }
-
-        header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 30px;
-            text-align: center;
-        }
-
-        header h1 {
-            font-size: 2.5em;
-            margin-bottom: 10px;
-        }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            padding: 30px;
-            background: #f8f9fa;
-        }
-
-        .stat-card {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            text-align: center;
-        }
-
-        .stat-card h3 {
-            color: #667eea;
-            font-size: 0.9em;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 10px;
-        }
-
-        .stat-card .value {
-            font-size: 2em;
-            font-weight: bold;
-            color: #333;
-        }
-
-        .stat-card .subvalue {
-            font-size: 0.9em;
-            color: #666;
-            margin-top: 5px;
-        }
-
-        .controls {
-            padding: 20px 30px;
-            background: #f8f9fa;
-            border-bottom: 1px solid #dee2e6;
-            display: flex;
-            gap: 15px;
-            flex-wrap: wrap;
-            align-items: center;
-        }
-
-        .controls input[type="text"],
-        .controls select {
-            padding: 10px;
-            border: 2px solid #dee2e6;
-            border-radius: 6px;
-            font-size: 14px;
-            flex: 1;
-            min-width: 200px;
-        }
-
-        .controls input[type="text"]:focus,
-        .controls select:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-
-        .controls label {
-            font-weight: 600;
-            color: #495057;
-        }
-
-        .content {
-            padding: 30px;
-        }
-
-        .game-section {
-            margin-bottom: 30px;
-            border: 1px solid #dee2e6;
-            border-radius: 8px;
-            overflow: hidden;
-        }
-
-        .game-header {
-            background: #667eea;
-            color: white;
-            padding: 15px 20px;
-            font-weight: 600;
-            font-size: 1.1em;
-            cursor: pointer;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-        
-        .game-header > span:first-child {
-            display: flex;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 10px;
-            flex: 1;
-        }
-
-        .game-header:hover {
-            background: #5568d3;
-        }
-
-        .game-header .toggle {
-            font-size: 0.8em;
-            opacity: 0.9;
-        }
-
-        .game-header .count {
-            background: rgba(255,255,255,0.2);
-            padding: 4px 10px;
-            border-radius: 12px;
-            font-size: 0.9em;
-        }
-
-        .dlc-list {
-            display: none;
-            padding: 0;
-        }
-
-        .game-section.expanded .dlc-list {
-            display: block;
-        }
-
-        .dlc-item {
-            padding: 15px 20px;
-            border-bottom: 1px solid #f0f0f0;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            transition: background 0.2s;
-        }
-
-        .dlc-item:last-child {
-            border-bottom: none;
-        }
-
-        .dlc-item:hover {
-            background: #f8f9fa;
-        }
-
-        .dlc-item.completed {
-            background: #d4edda;
-        }
-
-        .dlc-checkbox {
-            width: 24px;
-            height: 24px;
-            cursor: pointer;
-            accent-color: #667eea;
-        }
-
-        .dlc-info {
-            flex: 1;
-        }
-
-        .dlc-name {
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 5px;
-        }
-
-        .dlc-stats {
-            font-size: 0.85em;
-            color: #666;
-            display: flex;
-            gap: 15px;
-            flex-wrap: wrap;
-        }
-
-        .dlc-stats span {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        .progress-bar {
-            width: 150px;
-            height: 8px;
-            background: #e9ecef;
-            border-radius: 4px;
-            overflow: hidden;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
-            transition: width 0.3s ease;
-        }
-
-        .loading, .error {
-            text-align: center;
-            padding: 60px 20px;
-            color: #666;
-        }
-
-        .error {
-            color: #dc3545;
-        }
-
-        .no-data {
-            text-align: center;
-            padding: 60px 20px;
-            color: #666;
-        }
-
-        .filter-info {
-            padding: 15px 30px;
-            background: #fff3cd;
-            border-bottom: 1px solid #dee2e6;
-            color: #856404;
-            font-size: 0.9em;
-        }
-
-        .filter-info.hidden {
-            display: none;
-        }
-    </style>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="container">
         <header>
-            <div style="position: absolute; top: 20px; right: 30px;">
-                <a href="page.html" style="color: white; text-decoration: none; padding: 8px 16px; background: rgba(255,255,255,0.2); border-radius: 6px; transition: background 0.3s;">Main Dashboard</a>
+            <div class="theme-picker" id="themePicker">
+                <button type="button" class="theme-picker-btn" id="themePickerBtn" aria-label="Choose color scheme" title="Choose color scheme"></button>
+                <div class="theme-picker-dropdown" id="themePickerDropdown">
+                    <button type="button" class="theme-option active" data-theme="default">
+                        <span class="theme-option-swatch" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"></span>
+                        Default
+                    </button>
+                    <button type="button" class="theme-option" data-theme="ocean">
+                        <span class="theme-option-swatch" style="background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%);"></span>
+                        Ocean
+                    </button>
+                    <button type="button" class="theme-option" data-theme="forest">
+                        <span class="theme-option-swatch" style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);"></span>
+                        Forest
+                    </button>
+                    <button type="button" class="theme-option" data-theme="coral">
+                        <span class="theme-option-swatch" style="background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);"></span>
+                        Coral
+                    </button>
+                    <button type="button" class="theme-option" data-theme="slate">
+                        <span class="theme-option-swatch" style="background: linear-gradient(135deg, #475569 0%, #1e293b 100%);"></span>
+                        Slate
+                    </button>
+                </div>
+            </div>
+            <div class="nav-links">
+                <a href="page.html">Main Dashboard</a>
             </div>
             <h1>🎮 Achievement Engine</h1>
             <p>DLC Completion Checklist</p>
@@ -419,6 +190,8 @@
                 const gameStats = (allData.game_stats || {})[gameName] || {};
                 const gameTa = gameStats.total_ta || 0;
                 const gameEarnedTa = gameStats.earned_ta || 0;
+                const gameTotalGs = gameStats.total_gs || 0;
+                const gameEarnedGs = gameStats.earned_gs || 0;
                 const gameEarnedRatio = gameStats.avg_earned_ratio;
                 const gameOverallRatio = gameStats.avg_overall_ratio;
 
@@ -427,7 +200,8 @@
                         <div class="game-header" onclick="toggleGame('${gameId}')">
                             <span>
                                 <strong>${escapeHtml(gameName)}</strong>
-                                ${gameTa > 0 ? `<span style="font-size: 0.85em; margin-left: 10px; opacity: 0.9;">🏆 ${gameEarnedTa.toLocaleString()}/${gameTa.toLocaleString()} TA</span>` : ''}
+                                ${gameTotalGs > 0 ? `<span style="font-size: 0.85em; margin-left: 10px; opacity: 0.9;">⭐ ${gameEarnedGs.toLocaleString()}/${gameTotalGs.toLocaleString()} GS</span>` : ''}
+                                ${gameTa > 0 ? `<span style="font-size: 0.85em; margin-left: 10px; opacity: 0.9;">🎖️ ${gameEarnedTa.toLocaleString()}/${gameTa.toLocaleString()} TA</span>` : ''}
                                 ${gameEarnedRatio ? `<span style="font-size: 0.85em; margin-left: 10px; opacity: 0.9;">📊 Earned Ratio: ${gameEarnedRatio.toFixed(2)}</span>` : ''}
                                 ${gameOverallRatio ? `<span style="font-size: 0.85em; margin-left: 10px; opacity: 0.7;">(Overall: ${gameOverallRatio.toFixed(2)})</span>` : ''}
                             </span>
@@ -451,10 +225,10 @@
                                 <div class="dlc-stats">
                                     <span>📊 ${dlc.earned_ach}/${dlc.total_ach} achievements</span>
                                     <span>⭐ ${dlc.earned_gs}/${dlc.total_gs} GS</span>
-                                    <span>🏆 ${(dlc.earned_ta || 0).toLocaleString()}/${(dlc.total_ta || 0).toLocaleString()} TA</span>
+                                    <span>🎖️ ${(dlc.earned_ta || 0).toLocaleString()}/${(dlc.total_ta || 0).toLocaleString()} TA</span>
                                     <span>📈 ${dlc.completion_pct.toFixed(1)}%</span>
                                     <span>📊 Ratio: ${ratioDisplay}</span>
-                                    ${dlc.remaining_ach > 0 ? `<span>⏳ ${dlc.remaining_ach} remaining</span>` : ''}
+                                    ${dlc.remaining_ach > 0 ? `<span>🎯 ${dlc.remaining_ach} left</span>` : ''}
                                 </div>
                             </div>
                             <div class="progress-bar">
@@ -507,6 +281,40 @@
         document.getElementById('filterSelect').addEventListener('change', () => {
             render();
         });
+
+        (function initTheme() {
+            const KEY = 'achievement-engine-theme';
+            const picker = document.getElementById('themePicker');
+            const btn = document.getElementById('themePickerBtn');
+            const dropdown = document.getElementById('themePickerDropdown');
+
+            function applyTheme(theme) {
+                document.body.classList.remove('theme-ocean', 'theme-forest', 'theme-coral', 'theme-slate');
+                if (theme && theme !== 'default') document.body.classList.add('theme-' + theme);
+                try { localStorage.setItem(KEY, theme || 'default'); } catch (e) {}
+                dropdown.querySelectorAll('.theme-option').forEach(opt => {
+                    opt.classList.toggle('active', opt.dataset.theme === (theme || 'default'));
+                });
+            }
+
+            const saved = (function() { try { return localStorage.getItem(KEY); } catch (e) { return null; } })();
+            if (saved) applyTheme(saved);
+
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                picker.classList.toggle('open');
+            });
+
+            dropdown.querySelectorAll('.theme-option').forEach(opt => {
+                opt.addEventListener('click', () => {
+                    applyTheme(opt.dataset.theme);
+                    picker.classList.remove('open');
+                });
+            });
+
+            dropdown.addEventListener('click', e => e.stopPropagation());
+            document.addEventListener('click', () => picker.classList.remove('open'));
+        })();
 
         // Initialize
         loadData();

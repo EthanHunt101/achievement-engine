@@ -1,0 +1,14 @@
+# Achievement Engine - Requirements
+# 
+# This project uses only Python standard library modules.
+# No external packages are required!
+#
+# Required Python version: 3.6 or higher
+#
+# Standard library modules used:
+# - csv
+# - collections
+# - pathlib
+# - json
+# - argparse
+# - sys
