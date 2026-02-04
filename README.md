@@ -19,51 +19,9 @@ A Python tool that analyzes TrueAchievements CSV exports and provides visual das
   - TA scores and ratios per DLC
   - Search and filter functionality
 
-## Quick Start
+## Setup
 
-### 1. Prerequisites
-
-- Python 3.6 or higher (uses only standard library - no additional packages required!)
-
-### 2. Export Your Data from TrueAchievements
-
-1. Log into [TrueAchievements](https://www.trueachievements.com/)
-2. Go to your profile and export your achievements:
-   - Export **unlocked achievements** → save as `data/unlocked.csv`
-   - Export **locked achievements** → save as `data/locked.csv`
-
-**Required CSV columns:**
-- `GameName`
-- `Gamerscore`
-- `TAScore`
-- `TARatio`
-- `DLCName`
-- `UnlockDate` (for unlocked.csv)
-- `Unachieveable` (for locked.csv)
-
-### 3. Setup
-
-1. Clone or download this repository
-2. Create a `data/` folder in the project root
-3. Place your CSV exports in the `data/` folder:
-   - `data/unlocked.csv`
-   - `data/locked.csv`
-
-### 4. Run the Program
-
-```bash
-python rank_next.py
-```
-
-This will:
-- Process your achievement data
-- Generate `main_stats.json` and `dlc_data.json` for the HTML dashboards
-
-### 5. View Your Dashboard
-
-Open `page.html` in your web browser to see your main dashboard with all stats and visualizations.
-
-Click "DLC Checklist" in the header to view your DLC completion checklist.
+Please refer to the SETUP.md file to go over the necessary steps to ensure the program runs correctly and with the correct csv files
 
 ## Settings
 
