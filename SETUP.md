@@ -37,9 +37,16 @@ Your CSV files should include these columns (TrueAchievements exports should hav
    - `data/unlocked.csv`
    - `data/locked.csv`
 
-### 4. Run the Program
+### 4. Install the Live Server extension in your IDE
+If you're using VSCode or Cursor, I can't recommend the Live Server extension by Ritwick Dey enough. It makes viewing the local webpage much easier.
 
-Open a terminal/command prompt in the project directory and run:
+### 5. Activate the webpage with Live Server
+Go to the page.html file and look at the bottom right of your screen. You should see an area that says "Go Live." Click this while on the page.html page.
+If it doesn't show up, reload your IDE, and it will show up as long as you have installed Live Server.
+
+### 6. Run the Program
+
+Open a terminal/command prompt in the project directory (or click the run button on the top right of the code window) and run:
 
 ```bash
 python rank_next.py
@@ -49,7 +56,7 @@ The program will silently generate:
 - `main_stats.json` - Main dashboard data
 - `dlc_data.json` - DLC checklist data
 
-### 5. View Your Dashboard
+### 7. View Your Dashboard
 
 Open `page.html` in any web browser to see your dashboard!
 
