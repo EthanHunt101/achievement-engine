@@ -14,34 +14,34 @@
   },
   "completion_buckets": [
     {
-      "label": "0-24%",
-      "count": 71,
-      "percentage": 14.669421487603307
+      "label": "0-19%",
+      "count": 67,
+      "percentage": 13.842975206611571
     },
     {
-      "label": "25-49%",
-      "count": 30,
-      "percentage": 6.198347107438017
+      "label": "20-39%",
+      "count": 23,
+      "percentage": 4.75206611570248
     },
     {
-      "label": "50-74%",
-      "count": 35,
-      "percentage": 7.231404958677685
+      "label": "40-59%",
+      "count": 26,
+      "percentage": 5.371900826446281
     },
     {
-      "label": "75-89%",
-      "count": 28,
-      "percentage": 5.785123966942149
+      "label": "60-79%",
+      "count": 27,
+      "percentage": 5.578512396694215
     },
     {
-      "label": "90-98%",
-      "count": 7,
-      "percentage": 1.4462809917355373
+      "label": "80-94%",
+      "count": 26,
+      "percentage": 5.371900826446281
     },
     {
-      "label": "99%",
-      "count": 3,
-      "percentage": 0.6198347107438017
+      "label": "95-99%",
+      "count": 5,
+      "percentage": 1.0330578512396695
     },
     {
       "label": "100%",

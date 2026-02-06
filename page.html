@@ -180,6 +180,36 @@
             document.getElementById('taRatioPossible').textContent = taRatioPossible ? 'Possible: ' + taRatioPossible.toFixed(2) : '';
         }
 
+        // Which completion bucket is expanded (null = none). Used by renderCompletionBuckets.
+        let expandedBucketLabel = null;
+
+        function getGamesInBucket(bucketLabel) {
+            const allGames = allData.all_games || [];
+            const bounds = {
+                '0-19%':  [0, 20],
+                '20-39%': [20, 40],
+                '40-59%': [40, 60],
+                '60-79%': [60, 80],
+                '80-94%': [80, 95],
+                '95-99%': [95, 100],
+                '100%':   [100, 101]
+            };
+            const [minPct, maxPct] = bounds[bucketLabel] || [0, 0];
+            return allGames.filter(g => {
+                const pct = g.completion_pct ?? 0;
+                return pct >= minPct && pct < maxPct;
+            }).sort((a, b) => (b.completion_pct ?? 0) - (a.completion_pct ?? 0));
+        }
+
+        function toggleBucket(label) {
+            if (expandedBucketLabel === label) {
+                expandedBucketLabel = null;
+            } else {
+                expandedBucketLabel = label;
+            }
+            renderCompletionBuckets();
+        }
+
         function renderCompletionBuckets() {
             const buckets = allData.completion_buckets || [];
             const container = document.getElementById('completionBuckets');
@@ -190,21 +220,40 @@
                 return;
             }
 
-            let html = '';
+            let html = '<div class="bucket-cards-grid">';
             for (const bucket of buckets) {
                 const width = totalGames > 0 ? (bucket.count / totalGames * 100) : 0;
+                const isExpanded = expandedBucketLabel === bucket.label;
                 html += `
-                    <div class="bucket-card">
+                    <button type="button" class="bucket-card ${isExpanded ? 'bucket-card-expanded' : ''}" data-bucket-label="${escapeHtml(bucket.label)}" aria-expanded="${isExpanded}">
                         <div class="bucket-label">${bucket.label}</div>
                         <div class="bucket-count">${bucket.count}</div>
                         <div class="bucket-percentage">${bucket.percentage.toFixed(1)}%</div>
                         <div class="progress-bar-container">
                             <div class="progress-bar-fill" style="width: ${width}%"></div>
                         </div>
-                    </div>
+                    </button>
                 `;
             }
+            html += '</div>';
+
+            if (expandedBucketLabel) {
+                const gamesInBucket = getGamesInBucket(expandedBucketLabel);
+                html += `<div class="bucket-games-detail" id="bucketGamesDetail">`;
+                html += `<div class="bucket-games-header">Games in ${escapeHtml(expandedBucketLabel)} (${gamesInBucket.length})</div>`;
+                html += `<ul class="bucket-games-list">`;
+                for (const g of gamesInBucket) {
+                    const pct = (g.completion_pct ?? 0).toFixed(1);
+                    html += `<li class="bucket-game-item"><span class="bucket-game-name">${escapeHtml(g.game)}</span><span class="bucket-game-pct">${pct}%</span></li>`;
+                }
+                html += `</ul></div>`;
+            }
+
             container.innerHTML = html;
+
+            container.querySelectorAll('.bucket-card').forEach(btn => {
+                btn.addEventListener('click', () => toggleBucket(btn.getAttribute('data-bucket-label')));
+            });
         }
 
         function renderRecommendations() {

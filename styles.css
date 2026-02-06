@@ -350,16 +350,88 @@ header h1 {
 }
 
 .completion-buckets {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.bucket-cards-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
     gap: 15px;
 }
 
 .bucket-card {
+    display: block;
+    width: 100%;
     background: #f8f9fa;
     padding: 15px;
     border-radius: 8px;
     text-align: center;
+    border: 2px solid transparent;
+    cursor: pointer;
+    font: inherit;
+    transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.bucket-card:hover {
+    background: #eef0f3;
+}
+
+.bucket-card.bucket-card-expanded {
+    border-color: var(--theme-start);
+    background: #e8eaf0;
+}
+
+.bucket-games-detail {
+    padding: 15px;
+    background: #f0f2f5;
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+}
+
+.bucket-games-header {
+    font-weight: 600;
+    color: var(--theme-start);
+    margin-bottom: 12px;
+    font-size: 1.05em;
+}
+
+.bucket-games-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-height: 280px;
+    overflow-y: auto;
+}
+
+.bucket-game-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    border-radius: 6px;
+    margin-bottom: 4px;
+    background: #fff;
+}
+
+.bucket-game-item:hover {
+    background: #f8f9fa;
+}
+
+.bucket-game-name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.bucket-game-pct {
+    font-weight: 600;
+    color: var(--theme-start);
+    margin-left: 12px;
+    flex-shrink: 0;
 }
 
 .bucket-label {

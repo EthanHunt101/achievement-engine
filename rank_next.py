@@ -225,9 +225,9 @@ def export_main_stats(games, ranked, total_games, completed_games, total_gs_earn
             "dlc_achievements_remaining": cnt
         })
     
-    # Prepare completion buckets
+    # Prepare completion buckets (must match bucket_labels in main())
     completion_buckets = []
-    for label in ["0-24%", "25-49%", "50-74%", "75-89%", "90-98%", "99%", "100%"]:
+    for label in ["0-19%", "20-39%", "40-59%", "60-79%", "80-94%", "95-99%", "100%"]:
         cnt = buckets.get(label, 0)
         pct = (cnt / started_games * 100) if started_games > 0 else 0.0
         completion_buckets.append({
@@ -598,9 +598,8 @@ def main():
     )
 
     # Completion buckets for profile overview (only consider started games)
-    # Buckets: 0-24,25-49,50-74,75-89,90-98,99,100
-    bucket_bounds = [0,25,50,75,90,99,100]
-    bucket_labels = ["0-24%","25-49%","50-74%","75-89%","90-98%","99%","100%"]
+    # Evenly spread buckets: 0-19, 20-39, 40-59, 60-79, 80-94, 95-99, 100
+    bucket_labels = ["0-19%", "20-39%", "40-59%", "60-79%", "80-94%", "95-99%", "100%"]
     buckets = {label: 0 for label in bucket_labels}
     started_games = 0
 
@@ -619,18 +618,18 @@ def main():
         # place into bucket
         if pct >= 100:
             buckets["100%"] += 1
-        elif pct >= 99:
-            buckets["99%"] += 1
-        elif pct >= 90:
-            buckets["90-98%"] += 1
-        elif pct >= 75:
-            buckets["75-89%"] += 1
-        elif pct >= 50:
-            buckets["50-74%"] += 1
-        elif pct >= 25:
-            buckets["25-49%"] += 1
+        elif pct >= 95:
+            buckets["95-99%"] += 1
+        elif pct >= 80:
+            buckets["80-94%"] += 1
+        elif pct >= 60:
+            buckets["60-79%"] += 1
+        elif pct >= 40:
+            buckets["40-59%"] += 1
+        elif pct >= 20:
+            buckets["20-39%"] += 1
         else:
-            buckets["0-24%"] += 1
+            buckets["0-19%"] += 1
 
     ranked = []
     for game, g in games.items():
