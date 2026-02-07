@@ -96,7 +96,7 @@
 
         <div class="pane" id="pane-blocked">
             <button type="button" class="pane-header" aria-expanded="false" aria-controls="pane-blocked-body">
-                <span class="pane-title">Games with Unachievable Achievements</span>
+                <span class="pane-title">Games with Unachievable Achievements<span id="blockedGamesCount" class="pane-title-count"></span></span>
                 <span class="pane-chevron" aria-hidden="true">▶</span>
             </button>
             <div class="pane-body" id="pane-blocked-body">
@@ -110,7 +110,7 @@
 
         <div class="pane" id="pane-dlc-only">
             <button type="button" class="pane-header" aria-expanded="false" aria-controls="pane-dlc-only-body">
-                <span class="pane-title">Games with Only DLC Remaining</span>
+                <span class="pane-title">Games with Only DLC Remaining<span id="dlcOnlyGamesCount" class="pane-title-count"></span></span>
                 <span class="pane-chevron" aria-hidden="true">▶</span>
             </button>
             <div class="pane-body" id="pane-dlc-only-body">
@@ -298,6 +298,8 @@
             const blocked = allData.blocked_games || {};
             const games = blocked.games || [];
             const container = document.getElementById('blockedGames');
+            const countEl = document.getElementById('blockedGamesCount');
+            if (countEl) countEl.textContent = ' (' + games.length + ' Total)';
 
             if (games.length === 0) {
                 container.innerHTML = '<div class="empty-state">No blocked games</div>';
@@ -333,6 +335,8 @@
         function renderDlcOnlyGames() {
             const games = allData.dlc_only_games || [];
             const container = document.getElementById('dlcOnlyGames');
+            const countEl = document.getElementById('dlcOnlyGamesCount');
+            if (countEl) countEl.textContent = ' (' + games.length + ' Total)';
 
             if (games.length === 0) {
                 container.innerHTML = '<div class="empty-state">No games with only DLC remaining</div>';
